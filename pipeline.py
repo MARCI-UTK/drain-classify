@@ -47,7 +47,7 @@ if not os.path.exists(results_path):
     os.mkdir(results_path)
 
 # Load YOLO model
-yolo = YOLO('./pretrained_weights/yolov8n.pt')
+yolo = YOLO('./pretrained_weights/yolov8s.pt')
 print(f"Loaded YOLOv8 Model")
 
 # Load SAM model original way
@@ -81,13 +81,3 @@ for i, img_file in tqdm(enumerate(img_files)):
     save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=f'./results/mask_and_box-{img_file}.png')
 
     save_img_no_background(img, masks, dpi=192, save_path=f'./results/no_background-{img_file}.png')
-
-
-# Load SAM model with Ultralytics
-# overrides = dict(conf=0.25, task='segment', mode='predict', imgsz=1024, model="mobile_sam.pt")
-# predictor = SAMPredictor(overrides=overrides)
-
-# Predict with Ultralytics SAM model
-# predictor.set_image(img)  # set with image file
-# results = predictor(bboxes=input_box)
-

@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 def show_mask(mask, ax, random_color=False):
     if random_color:

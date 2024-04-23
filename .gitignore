@@ -2,3 +2,4 @@ sam_b.pt
 yolov8n.pt
 ./pretrained_weights/*
 pretrained_weights/*
+runs/*

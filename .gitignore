@@ -3,3 +3,4 @@ yolov8n.pt
 ./pretrained_weights/*
 pretrained_weights/*
 runs/*
+combo_results/*

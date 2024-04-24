@@ -43,16 +43,16 @@ img_files = os.listdir(data_dir)[1:]
 print(f"Image files: {img_files}")
 
 # Create results directory if not there
-results_path = "./yolov8_results"
+results_path = "./yolov5_results"
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
 yolo_models = {
-    "nano": "yolov8n.pt",
-    "small": "yolov8s.pt",
-    "medium": "yolov8m.pt",
-    "large": "yolov8l.pt",
-    "xlarge": "yolov8x.pt"
+    "nano": "yolov5nu.pt",
+    "small": "yolov5su.pt",
+    "medium": "yolov5mu.pt",
+    "large": "yolov5lu.pt",
+    "xlarge": "yolov5xu.pt"
 }
 
 sam_models = {
@@ -69,7 +69,7 @@ for yolo_name, yolo_model in yolo_models.items():
 
         # Load YOLO model
         yolo = YOLO(f'./pretrained_weights/{yolo_model}')
-        print(f"Loaded YOLOv8 {yolo_name} Model")
+        print(f"Loaded YOLOv9 {yolo_name} Model")
 
         # Load SAM model original way
         sam_checkpoint = f"./pretrained_weights/{sam_model[0]}"
@@ -119,11 +119,11 @@ for yolo_name, yolo_model in yolo_models.items():
             total_time = yolo_time + sam_time
             all_times[f'yolo{yolo_name}-sam{sam_name}-{img_file}'] = (yolo_time, sam_time, total_time)
 
-            save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=f'./{results_path}/{yolo_name}-{sam_name}-{img_file}-mab.png')
+            save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=f'./yolov5_results/{yolo_name}-{sam_name}-{img_file}-mab.png')
 
-            save_img_no_background(img, masks, dpi=192, save_path=f'./{results_path}/{yolo_name}-{sam_name}-{img_file}-noback.png')
+            save_img_no_background(img, masks, dpi=192, save_path=f'./yolov5_results/{yolo_name}-{sam_name}-{img_file}-noback.png')
 
 # Save times dictionary to file
-with open(f'./{results_path}/all_times.txt', 'w') as f:
+with open('./yolov5_results/all_times.txt', 'w') as f:
     json.dump(all_times, f)
 print("Saved all times to text file")

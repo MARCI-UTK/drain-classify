@@ -5,3 +5,5 @@ pretrained_weights/*
 runs/*
 combo_results/*
 yolov8_results/*
+yolov9_results/*
+yolov5_results/*

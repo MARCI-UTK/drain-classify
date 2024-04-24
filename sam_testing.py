@@ -61,7 +61,14 @@ for sam_name, sam_model in sam_models.items():
         masks = auto_mask.generate(img)
         sam_time = sam_start - time.time()
 
-        all_times[f'sam-auto{sam_name}-{img_file}'] = sam_time
+        all_times[f'sam-auto-{sam_name}-{img_file}'] = sam_time
+
+        _,axes = plt.subplots(1,2, figsize=(16,16))
+        axes[0].imshow(img)
+        show_output(masks, axes[1])
+        plt.axis('off')
+        save_path = f'./{results_path}/{sam_name}-auto-{img_file}-allmasks.png'
+        plt.savefig(save_path)
 
 # Save times dictionary to file
 with open(f'./{results_path}/all_times.txt', 'w') as f:

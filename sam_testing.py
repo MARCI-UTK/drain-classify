@@ -56,6 +56,7 @@ for sam_name, sam_model in sam_models.items():
     for i, img_file in tqdm(enumerate(img_files)):
         img_path = os.path.join(data_dir, img_file)
         img = Image.open(img_path)
+        img = np.array(img)
 
         sam_start = time.time()
         masks = auto_mask.generate(img)
@@ -66,7 +67,8 @@ for sam_name, sam_model in sam_models.items():
         _,axes = plt.subplots(1,2, figsize=(16,16))
         axes[0].imshow(img)
         show_output(masks, axes[1])
-        plt.axis('off')
+        axes[0].axis('off')
+        axes[1].axis('off')
         save_path = f'./{results_path}/{sam_name}-auto-{img_file}-allmasks.png'
         plt.savefig(save_path)
 

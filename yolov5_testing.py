@@ -119,11 +119,11 @@ for yolo_name, yolo_model in yolo_models.items():
             total_time = yolo_time + sam_time
             all_times[f'yolo{yolo_name}-sam{sam_name}-{img_file}'] = (yolo_time, sam_time, total_time)
 
-            save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=f'./yolov5_results/{yolo_name}-{sam_name}-{img_file}-mab.png')
+            save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=f'./{results_path}/{yolo_name}-{sam_name}-{img_file}-mab.png')
 
-            save_img_no_background(img, masks, dpi=192, save_path=f'./yolov5_results/{yolo_name}-{sam_name}-{img_file}-noback.png')
+            save_img_no_background(img, masks, dpi=192, save_path=f'./{results_path}/{yolo_name}-{sam_name}-{img_file}-noback.png')
 
 # Save times dictionary to file
-with open('./yolov5_results/all_times.txt', 'w') as f:
+with open(f'./{results_path}/all_times.txt', 'w') as f:
     json.dump(all_times, f)
 print("Saved all times to text file")

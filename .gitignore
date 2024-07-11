@@ -8,3 +8,8 @@ yolov8_results/*
 yolov9_results/*
 yolov5_results/*
 sam-auto_results/*
+testing/sam-auto_results/*
+testing/yolov5_results/*
+testing/yolov9_results/*
+raw_data/*
+DC/*

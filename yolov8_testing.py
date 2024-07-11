@@ -47,12 +47,16 @@ results_path = "./yolov8_results"
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
+# yolo_models = {
+#     "nano": "yolov8n.pt",
+#     "small": "yolov8s.pt",
+#     "medium": "yolov8m.pt",
+#     "large": "yolov8l.pt",
+#     "xlarge": "yolov8x.pt"
+# }
+
 yolo_models = {
-    "nano": "yolov8n.pt",
-    "small": "yolov8s.pt",
-    "medium": "yolov8m.pt",
-    "large": "yolov8l.pt",
-    "xlarge": "yolov8x.pt"
+    "medium": "yolov8m.pt"
 }
 
 sam_models = {

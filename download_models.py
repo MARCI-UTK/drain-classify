@@ -14,19 +14,19 @@ def download_all():
         yolo = YOLO(model_name)
         print(f"Downloaded {model_name}\n")
 
-    # for model_name in yolo8_models:
-    #     yolo = YOLO(model_name)
-    #     print(f"Downloaded {model_name}\n")
+    for model_name in yolo8_models:
+        yolo = YOLO(model_name)
+        print(f"Downloaded {model_name}\n")
 
-    # for model_name in yolo9_models:
-    #     yolo = YOLO(model_name)
-    #     print(f"Downloaded {model_name}\n")
+    for model_name in yolo9_models:
+        yolo = YOLO(model_name)
+        print(f"Downloaded {model_name}\n")
 
-    # for i, model_url in enumerate(sam_models):
-    #     wget.download(model_url)
-    #     print(f"Downloaded SAM {sam_models_names[i]}\n")
+    for i, model_url in enumerate(sam_models):
+        wget.download(model_url)
+        print(f"Downloaded SAM {sam_models_names[i]}\n")
 
 
-download_all()
-
-# Place the models into a new folder named "pretrained_weights"
+if __name__ == "__main__":
+    # Place the models into a new folder named "pretrained_weights"
+    download_all()

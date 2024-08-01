@@ -38,7 +38,7 @@ def save_img_no_background(img, masks, dpi, save_path):
     plt.savefig(save_path)
 
 # Set data directory and load images
-data_dir = "./data"
+data_dir = "./raw_data"
 img_files = os.listdir(data_dir)[1:]
 print(f"Image files: {img_files}")
 
@@ -56,13 +56,13 @@ if not os.path.exists(results_path):
 # }
 
 yolo_models = {
-    "medium": "yolov8m.pt"
+    "small-ft": "small-ft.pt"
 }
 
 sam_models = {
     "base": ("sam_vit_b_01ec64.pth", "vit_b"),
-    "large": ("sam_vit_l_0b3195.pth", "vit_l"),
-    "huge": ("sam_vit_h_4b8939.pth", "vit_h")
+    # "large": ("sam_vit_l_0b3195.pth", "vit_l"),
+    # "huge": ("sam_vit_h_4b8939.pth", "vit_h")
 }
 
 # Going through all possible combinations to test performance

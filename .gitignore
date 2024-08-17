@@ -13,3 +13,5 @@ testing/yolov5_results/*
 testing/yolov9_results/*
 raw_data/*
 DC/*
+mask_results/*
+datasets/*

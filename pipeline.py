@@ -9,32 +9,7 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
-from util import show_box, show_mask, show_points
-
-def save_img_with_mask_and_box(img, masks, bbox, dpi, save_path):
-    img_width, img_height = img.size
-    fig = plt.figure(figsize=(img_width / dpi, img_height / dpi), dpi=dpi) 
-    ax = fig.add_axes([0, 0, 1, 1]) # Makes the image take up full figure
-    ax.axis('off') # Don't want to see the axes
-    plt.imshow(img)
-    show_mask(masks[0], plt.gca())
-    show_box(np.array(bbox), plt.gca())
-    plt.axis('off')
-    plt.savefig(save_path)
-
-def save_img_no_background(img, masks, dpi, save_path):
-    segmentation_mask = masks[0]
-    binary_mask = np.where(segmentation_mask > 0.5, 1, 0)
-    white_background = np.ones_like(np.array(img)) * 255
-    new_image = white_background * (1 - binary_mask[..., np.newaxis]) + np.array(img) * binary_mask[..., np.newaxis]
-
-    img_width, img_height = img.size
-    fig = plt.figure(figsize=(img_width / dpi, img_height / dpi), dpi=dpi) 
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.axis('off')
-    plt.imshow(new_image.astype(np.uint8))
-    plt.axis('off')
-    plt.savefig(save_path)
+from util import save_img_with_mask_and_box, save_img_no_background
 
 # Set data directory and load images
 data_dir = "./data"

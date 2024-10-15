@@ -1,147 +1,164 @@
-from ultralytics import YOLO
-from ultralytics.models.sam import Predictor as SAMPredictor
-from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
-from PIL import Image
+from clearml import Task
+task = Task.init(project_name="drain", task_name="mask-testing") 
+
 import os
-from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import time
 import json
+import torch
+import numpy as np
 
-from util import show_box, show_mask, show_points
+from PIL import Image
+from tqdm import tqdm
+from datetime import datetime
+from ultralytics import YOLO
+from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
+from sam2.sam2_image_predictor import SAM2ImagePredictor
 
-def save_img_with_mask_and_box(img, masks, bbox, dpi, save_path):
-    img_width, img_height = img.size
-    fig = plt.figure(figsize=(img_width / dpi, img_height / dpi), dpi=dpi) 
-    ax = fig.add_axes([0, 0, 1, 1]) # Makes the image take up full figure
-    ax.axis('off') # Don't want to see the axes
-    plt.imshow(img)
-    show_mask(masks[0], plt.gca())
-    if bbox:
-        show_box(np.array(bbox), plt.gca())
-    plt.axis('off')
-    plt.savefig(save_path)
+from util import save_img_no_background, save_img_with_mask_and_box
 
-def save_img_no_background(img, masks, dpi, save_path):
-    segmentation_mask = masks[0]
-    binary_mask = np.where(segmentation_mask > 0.5, 1, 0)
-    white_background = np.ones_like(np.array(img)) * 255
-    new_image = white_background * (1 - binary_mask[..., np.newaxis]) + np.array(img) * binary_mask[..., np.newaxis]
+YOLO_MODELS = {
+    # YOLO 8 
+    "yolo8n":   "yolov8n.pt",
+    "yolo8s":   "yolov8s.pt",
+    "yolo8m":   "yolov8m.pt",
+    "yolo8l":   "yolov8l.pt",
+    "yolo8x":   "yolov8x.pt",
 
-    img_width, img_height = img.size
-    fig = plt.figure(figsize=(img_width / dpi, img_height / dpi), dpi=dpi) 
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.axis('off')
-    plt.imshow(new_image.astype(np.uint8))
-    plt.axis('off')
-    plt.savefig(save_path)
+    # YOLO 10 
+    "yolo10n":   "yolov10n.pt",
+    "yolo10s":   "yolov10s.pt",
+    "yolo10m":   "yolov10m.pt",
+    "yolo10l":   "yolov10l.pt",
+    "yolo10x":   "yolov10x.pt",
 
-def test(yolo_version="8"):
-    # Set YOLO model version; Options: [5, 8, 10]
-    yolo_version = "8"
+}
 
+SAM_MODELS = {
+    # SAM 
+    "sam_vitb": ["sam_vit_b_01ec64.pth", "vit_b"],
+    "sam_vitl": ["sam_vit_l_0b3195.pth", "vit_l"],
+    "sam_vith": ["sam_vit_h_4b8939.pth", "vit_h"],
+
+    # SAM 2.1
+    "sam2.1_vitt":  "facebook/sam2.1-hiera-tiny",
+    "sam2.1_vits":  "facebook/sam2.1-hiera-small",
+    "sam2.1_vitb+": "facebook/sam2.1-hiera-base-plus",
+    "sam2.1_vitl":  "facebook/sam2.1-hiera-large",
+}
+
+
+class Config(object):
+    def __init__(self):
+        self.pretrained_weights_dir = "./pretrained_models"
+
+        self.yolo_model = "yolo10m"
+        self.yolo_pretrained = os.path.join(self.pretrained_weights_dir, YOLO_MODELS[self.yolo_model])
+        self.yolo = YOLO(self.yolo_pretrained)
+
+        self.sam_model = "sam2.1_vitb+"
+
+        # SAM 2.1
+        if "2" in self.sam_model:
+            self.sam = SAM2ImagePredictor.from_pretrained(SAM_MODELS[self.sam_model], device=torch.device("cpu"))
+        # SAM
+        else:
+            self.sam = SamPredictor(sam_model_registry[self.sam_model_config](checkpoint=self.sam_pretrained))
+
+    def save(self, save_dir):
+        config = {
+            "yolo_model": self.yolo_model,
+            "sam_model": self.sam_model
+        }
+
+        save_path = os.path.join(save_dir, "config.txt")
+        with open(save_path, 'w') as file:
+            json.dump(config, file)
+            
+
+def run(yolo, sam, yolo_name, sam_name, save_dir):
     # Data directory containing drain images
-    data_dir = "./raw_data"
+    data_dir = "./data/raw"
     # The "[1:]" removes a non-image file contained in dir
     img_files = os.listdir(data_dir)[1:]
-    print(f"Image files: {img_files}")
+    
+    times = {}
+    for i, img_file in tqdm(enumerate(img_files)):
+        img_path = os.path.join(data_dir, img_file)
+        img = Image.open(img_path)
 
-    # Create results directory if not there
-    results_path = f"./mask_results/yolov{yolo_version}"
-    if not os.path.exists(results_path):
-        os.mkdir(results_path)
+        # yolo time inference
+        yolo_start = time.time()
+        yolo_results = yolo.predict(img, save=True, conf=0.25, 
+                                    project=save_dir, name="detect", exist_ok=True)
+        yolo_time = time.time() - yolo_start
 
-    # Dict used for accessing different YOLO models in same run
-    yolo_models = {
-        "nano": f"yolov{yolo_version}n.pt",
-        "small": f"yolov{yolo_version}s.pt",
-        "medium": f"yolov{yolo_version}m.pt",
-        # "large": f"yolov{yolo_version}l.pt",
-        # "xlarge": f"yolov{yolo_version}x.pt"
-    }
+        for result in yolo_results:
+            # Boxes object for bbox outputs
+            boxes = result.boxes  
+        
+        if len(boxes.xyxy.tolist()) > 0:
+            bbox = boxes.xyxy.tolist()[0]
+            input_box = np.array(bbox)
+        else:
+            bbox = None
 
-    sam_models = {
-        "base": ("sam_vit_b_01ec64.pth", "vit_b"),
-        # "large": ("sam_vit_l_0b3195.pth", "vit_l"),
-        # "huge": ("sam_vit_h_4b8939.pth", "vit_h")
-    }
+        input_img = np.array(img) 
 
-    # Going through all possible combinations to test performance
-    # Measure quality of bounding boxes and masks and measure speed of inference
-    all_times = {}
-    for yolo_name, yolo_model in yolo_models.items():
-        for sam_name, sam_model in sam_models.items():
+        # Used to calculate inference time
+        sam_start = time.time()
 
-            # Load YOLO model
-            yolo = YOLO(f'./pretrained_weights/{yolo_model}')
-            print(f"Loaded {yolo_name} model")
+        # Only running encoder once
+        sam.set_image(input_img) 
+    
+        if bbox:
+            # Retrieving the masks
+            masks, _, _ = sam.predict( 
+                point_coords=None,
+                point_labels=None,
+                box=input_box[None, :],
+                multimask_output=False,
+            )
+        else:
+            # Retrieving the masks with no bounding box
+            masks, _, _ = sam.predict(
+                point_coords=None,
+                point_labels=None,
+                box=None,
+                multimask_output=False,
+            )
 
-            # Load SAM model original way
-            sam_checkpoint = f"./pretrained_weights/{sam_model[0]}"
-            model_type = sam_model[1]
-            sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
-            predictor = SamPredictor(sam)
-            print(f"Loaded SAM {sam_name} Model")
+        # Total SAM inference time and total time 
+        sam_time = time.time() - sam_start
+        total_time = yolo_time + sam_time
 
-            for i, img_file in tqdm(enumerate(img_files)):
-                img_path = os.path.join(data_dir, img_file)
-                img = Image.open(img_path)
+        times["yolo"] = yolo_time
+        times["sam"] = sam_time
+        times["total"] = total_time
 
-                # yolo time inference
-                yolo_start = time.time()
-                yolo_results = yolo.predict(img, save=True,  conf=0.25)
-                yolo_time = time.time() - yolo_start
-
-                for result in yolo_results:
-                    # Boxes object for bbox outputs
-                    boxes = result.boxes  
-                
-                if len(boxes.xyxy.tolist()) > 0:
-                    bbox = boxes.xyxy.tolist()[0]
-                    input_box = np.array(bbox)
-                else:
-                    bbox = None
-
-                input_img = np.array(img) 
-
-                # Used to calculate inference time
-                sam_start = time.time()
-
-                # Only running encoder once
-                predictor.set_image(input_img) 
-            
-                if bbox:
-                    # Retrieving the masks
-                    masks, _, _ = predictor.predict( 
-                        point_coords=None,
-                        point_labels=None,
-                        box=input_box[None, :],
-                        multimask_output=False,
-                    )
-                else:
-                    # Retrieving the masks with no bounding box
-                    masks, _, _ = predictor.predict(
-                        point_coords=None,
-                        point_labels=None,
-                        box=None,
-                        multimask_output=False,
-                    )
-
-                # Total SAM inference time    
-                sam_time = time.time() - sam_start
-
-                total_time = yolo_time + sam_time
-                all_times[f'yolo{yolo_name}-sam{sam_name}-{img_file}'] = (yolo_time, sam_time, total_time)
-
-                save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=f'./{results_path}/{yolo_name}-{sam_name}-{img_file}-mab.png')
-
-                save_img_no_background(img, masks, dpi=192, save_path=f'./{results_path}/{yolo_name}-{sam_name}-{img_file}-noback.png')
+        save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=os.path.join(save_dir, f'{yolo_name}-{sam_name}-{img_file}-mab.png'))
+        save_img_no_background(img, masks, dpi=192, save_path=os.path.join(save_dir, f'{yolo_name}-{sam_name}-{img_file}-noback.png'))
 
     # Save times dictionary to file
-    with open(f'./{results_path}/all_times.txt', 'w') as f:
-        json.dump(all_times, f)
-    print("Saved all times to text file")
+    with open(os.path.join(save_dir, "times.txt"), 'w') as f:
+        json.dump(times, f)
 
 if __name__ == "__main__":
-    test()
+
+    config = Config()
+    task.connect(config, name="config")
+
+    # Set save_dir and ensure it exists
+    save_dir = os.path.join('./results/mask_testing', datetime.now().strftime("%Y%b%d_%H:%M:%S"))
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+
+    config.save(save_dir)
+
+    run(
+        yolo=config.yolo,
+        sam=config.sam,
+        yolo_name=config.yolo_model,
+        sam_name=config.sam_model,
+        save_dir=save_dir,
+    )

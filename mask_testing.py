@@ -40,6 +40,12 @@ SAM_MODELS = {
     "sam_vitl": ["sam_vit_l_0b3195.pth", "vit_l"],
     "sam_vith": ["sam_vit_h_4b8939.pth", "vit_h"],
 
+    # SAM 2
+    "sam2_vitt":  "facebook/sam2-hiera-tiny",
+    "sam2_vits":  "facebook/sam2-hiera-small",
+    "sam2_vitb+": "facebook/sam2-hiera-base-plus",
+    "sam2_vitl":  "facebook/sam2-hiera-large",
+
     # SAM 2.1
     "sam2.1_vitt":  "facebook/sam2.1-hiera-tiny",
     "sam2.1_vits":  "facebook/sam2.1-hiera-small",
@@ -56,7 +62,7 @@ class Config(object):
         self.yolo_pretrained = os.path.join(self.pretrained_weights_dir, YOLO_MODELS[self.yolo_model])
         self.yolo = YOLO(self.yolo_pretrained)
 
-        self.sam_model = "sam2.1_vitb+"
+        self.sam_model = "sam2_vitb+"
 
         # SAM 2.1
         if "2" in self.sam_model:

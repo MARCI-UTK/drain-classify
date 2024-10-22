@@ -2,3 +2,4 @@ runs/*
 results/*
 data/*
 pretrained_models/*
+__pycache__/*

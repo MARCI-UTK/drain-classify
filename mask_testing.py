@@ -12,10 +12,10 @@ from PIL import Image
 from tqdm import tqdm
 from datetime import datetime
 from ultralytics import YOLO
-from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
+from segment_anything import sam_model_registry, SamPredictor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
-from util import save_img_no_background, save_img_with_mask_and_box
+from util import save_img_bbox_and_mask, save_img_masked_out
 
 YOLO_MODELS = {
     # YOLO 8 
@@ -58,7 +58,7 @@ class Config(object):
     def __init__(self):
         self.pretrained_weights_dir = "./pretrained_models"
 
-        self.yolo_model = "yolo10m"
+        self.yolo_model = "yolo8m"
         self.yolo_pretrained = os.path.join(self.pretrained_weights_dir, YOLO_MODELS[self.yolo_model])
         self.yolo = YOLO(self.yolo_pretrained)
 
@@ -113,7 +113,6 @@ def run(yolo, sam, yolo_name, sam_name, save_dir):
 
         # Used to calculate inference time
         sam_start = time.time()
-
         # Only running encoder once
         sam.set_image(input_img) 
     
@@ -142,22 +141,30 @@ def run(yolo, sam, yolo_name, sam_name, save_dir):
         times["sam"] = sam_time
         times["total"] = total_time
 
-        save_img_with_mask_and_box(img, masks, bbox, dpi=192, save_path=os.path.join(save_dir, f'{yolo_name}-{sam_name}-{img_file}-mab.png'))
-        save_img_no_background(img, masks, dpi=192, save_path=os.path.join(save_dir, f'{yolo_name}-{sam_name}-{img_file}-noback.png'))
+        file_name = f'{yolo_name}-{sam_name}-{img_file[:-4]}'
+
+        # Saves an image showing top-1 bounding box and mask
+        save_img_bbox_and_mask(img, masks, bbox, 
+                               save_path=os.path.join(save_dir, 'bbox_and_mask'), 
+                               file_name=file_name)
+        
+        # Saves image with masked, white background using top-1 segmentation mask
+        save_img_masked_out(img, masks, 
+                            save_path=os.path.join(save_dir, 'masked_out'), 
+                            file_name=file_name)
 
     # Save times dictionary to file
     with open(os.path.join(save_dir, "times.txt"), 'w') as f:
         json.dump(times, f)
 
-if __name__ == "__main__":
-
+def main():
     config = Config()
     task.connect(config, name="config")
 
     # Set save_dir and ensure it exists
     save_dir = os.path.join('./results/mask_testing', datetime.now().strftime("%Y%b%d_%H:%M:%S"))
     if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
     config.save(save_dir)
 
@@ -168,3 +175,6 @@ if __name__ == "__main__":
         sam_name=config.sam_model,
         save_dir=save_dir,
     )
+
+if __name__ == "__main__":
+    main()

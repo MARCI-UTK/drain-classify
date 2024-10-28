@@ -67,7 +67,9 @@ def save_img_masked_out(img, mask, dpi=192, save_path=None, file_name=None):
     plt.close()
 
 def display_images(img_dir):
-    img_files = os.listdir(img_dir)
+    img_files = sorted(os.listdir(img_dir))
+    print(img_files)
+
     images = []
     for img_file in img_files:
         image = Image.open(os.path.join(img_dir, img_file))
@@ -95,4 +97,4 @@ def display_images(img_dir):
     plt.savefig(os.path.join(img_dir, 'showcase.png'), dpi=1200)
     plt.close()
 
-display_images("results/dino_testing/2024Oct22_13:16:58/masked_out")
+display_images("results/yolo_testing/2024Oct22_13:57:08/masked_out")

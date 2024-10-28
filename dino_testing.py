@@ -56,7 +56,7 @@ def test(processor, detection_model, sam, dino_name, sam_name, save_dir):
             multimask_output=False,
         )
 
-        file_name = f'{dino_name}-{sam_name}-{img_file[:-4]}'
+        file_name = f'{img_file[:-4]}'
 
         save_img_bbox_and_mask(img, masks[0], input_box,
                                save_path=os.path.join(save_dir, 'bbox_and_mask'),

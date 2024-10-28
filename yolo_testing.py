@@ -58,7 +58,7 @@ def test(yolo, sam, yolo_name, sam_name, save_dir):
                 multimask_output=False,
             )
 
-        file_name = f'{yolo_name}-{sam_name}-{img_file[:-4]}'
+        file_name = f'{img_file[:-4]}'
 
         # Saves an image showing top-1 bounding box and mask
         if len(bboxs) > 0:
